@@ -163,6 +163,6 @@ def enrichArticles(articles, lang):
         page = BeautifulSoup(content, "html.parser")
         title = page.find('h1', id="firstHeading").text
         description = page.find('div', id="bodyContent").find('p').text
-        image = page.find('div', id="bodyContent").find('img')['src']
+        image = page.find('div', id="bodyContent").find('a', 'image').find('img')['src']
         object_articles.append({'title':title, 'url':url, 'image':image, 'description':description})
     return object_articles
