@@ -5,6 +5,7 @@ from flask import flash
 import os, re
 from bs4 import BeautifulSoup
 import urllib
+import json
 
 badList = [
     u'Pagina_principale',
@@ -163,6 +164,38 @@ def enrichArticles(articles, lang):
         page = BeautifulSoup(content, "html.parser")
         title = page.find('h1', id="firstHeading").text
         description = page.find('div', id="bodyContent").find('p').text
-        image = page.find('div', id="bodyContent").find('a', 'image').find('img')['src']
+        #image = page.find('div', id="bodyContent").find('a', 'image').find('img')['src']
+        image = extractBiggestImage(page)
         object_articles.append({'title':title, 'url':url, 'image':image, 'description':description})
     return object_articles
+
+
+def enrichArticlesAPI(articles, lang):
+    object_articles = []
+    titles=''
+    for article in articles:
+        titles += article + '|'
+    url = ('https://' + lang + '.wikipedia.org/w/api.php/?titles=' + titles[:-1] + '&action=query&prop=revisions&rvprop=content&format=json').encode('utf8')
+    content = json.loads(urllib.urlopen(url).read())
+    page = BeautifulSoup(content, "html.parser")
+    title = page.find('h1', id="firstHeading").text
+    description = page.find('div', id="bodyContent").find('p').text
+    image = page.find('div', id="bodyContent").find('a', 'image').find('img')['src']
+    object_articles.append({'title':title, 'url':url, 'image':image, 'description':description})
+    return object_articles
+
+
+def extractBiggestImage(page):
+    max_size = 0
+    big_img = ''
+    image = page.find('img')
+    while True:
+        height = int(image['height'])
+        width = int(image['width'])
+        size = height * width
+        if size > max_size:
+            max_size = size
+            big_img = image['src']
+        image = image.findNext('img')
+        if not image: break
+    return big_img
